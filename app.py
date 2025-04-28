@@ -18,7 +18,7 @@ def login_and_fetch_attendance(username, password, required_percentage):
     attendance_data = {}
 
     with sync_playwright() as p:
-        chromium_path = p.chromium.executable_path()
+        chromium_path = p.chromium.executablePath()
         print(f"Chromium executable path: {chromium_path}")
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
