@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #app { width: 100%; max-width: 500px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .input-group { margin: 15px 0; }
+        .input-group label { display: block; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 8px; }
+        #submit-btn, .menu-btn { width: 100%; padding: 10px; margin: 5px 0; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #results, #menu { margin-top: 20px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Attendance Checker</h2>
+        
+        <div id="login-section">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="input-group">
+                <label for="required-percentage">Required Attendance Percentage (default: 75%)</label>
+                <input type="number" id="required-percentage" min="0" max="100" value="75">
+            </div>
+            <button id="submit-btn">Check Attendance</button>
+        </div>
+
+        <div id="menu" style="display: none;">
+            <button class="menu-btn" onclick="viewSpecificSubject()">1. View attendance details for a specific subject</button>
+            <button class="menu-btn" onclick="viewAllSubjects()">2. View attendance details for all subjects</button>
+            <button class="menu-btn" onclick="changeRequiredPercentage()">3. Change required attendance percentage</button>
+            <button class="menu-btn" onclick="exit()">4. Exit</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let attendanceData = {};
+        let requiredPercentage = 75;
+
+        // Handle the initial login and attendance fetch
+        document.getElementById("submit-btn").addEventListener("click", async function () {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            requiredPercentage = document.getElementById("required-percentage").value || 75;
+
+            if (!username || !password) {
+                document.getElementById("results").innerHTML = '<p class="error">Please enter your username and password.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password, required_percentage: parseInt(requiredPercentage) })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    document.getElementById("results").innerHTML = `<p class="error">${errorData.error || 'Login failed'}</p>`;
+                    return;
+                }
+
+                const data = await response.json();
+                attendanceData = data.attendance;
+                requiredPercentage = data.required_percentage;
+                displayMenu();
+            } catch (error) {
+                document.getElementById("results").innerHTML = `<p class="error">An error occurred. Please try again later.</p>`;
+            }
+        });
+
+        // Display the main menu options
+        function displayMenu() {
+            document.getElementById("login-section").style.display = "none";
+            document.getElementById("menu").style.display = "block";
+            document.getElementById("results").innerHTML = `<p>Attendance data loaded. Choose an option from the menu.</p>`;
+        }
+
+        // View specific subject details
+        function viewSpecificSubject() {
+            let subjectNames = Object.keys(attendanceData);
+            let subjectList = subjectNames.map((name, index) => `<button onclick="showSubjectDetails('${name}')">${index + 1}. ${name}</button>`).join("");
+            document.getElementById("results").innerHTML = `<h3>Select a Subject:</h3>${subjectList}`;
+        }
+
+        // Show details for a selected subject
+        function showSubjectDetails(subjectName) {
+            const subject = attendanceData[subjectName];
+            let message;
+            if (subject.status === "Enough attendance") {
+                message = `You can bunk ${subject.allowed_bunks} classes.`;
+            } else {
+                message = `You need to attend ${subject.required_classes} more classes.`;
+            }
+            document.getElementById("results").innerHTML = `<h3>${subjectName}:</h3><p>${message}</p>`;
+        }
+
+        // View details for all subjects
+        function viewAllSubjects() {
+            let resultHtml = "<h3>Attendance Details for All Subjects:</h3><ul>";
+            for (const subject in attendanceData) {
+                const details = attendanceData[subject];
+                resultHtml += `<li>${subject}: `;
+                if (details.status === "Enough attendance") {
+                    resultHtml += `Allowed bunks: ${details.allowed_bunks}`;
+                } else {
+                    resultHtml += `Required classes: ${details.required_classes}`;
+                }
+                resultHtml += "</li>";
+            }
+            resultHtml += "</ul>";
+            document.getElementById("results").innerHTML = resultHtml;
+        }
+
+        // Change the required attendance percentage and refresh the data
+        function changeRequiredPercentage() {
+            requiredPercentage = prompt("Enter new required attendance percentage:", requiredPercentage);
+            if (requiredPercentage !== null) {
+                requiredPercentage = parseInt(requiredPercentage);
+                fetchAttendanceData();
+            }
+        }
+
+        // Fetch updated attendance data with new required percentage
+        async function fetchAttendanceData() {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ required_percentage: requiredPercentage })
+                });
+
+                if (!response.ok) {
+                    document.getElementById("results").innerHTML = `<p class="error">Failed to update data.</p>`;
+                    return;
+                }
+
+                const data = await response.json();
+                attendanceData = data.attendance;
+                document.getElementById("results").innerHTML = `<p>Required percentage updated to ${requiredPercentage}%. Data refreshed.</p>`;
+            } catch (error) {
+                document.getElementById("results").innerHTML = `<p class="error">An error occurred. Please try again later.</p>`;
+            }
+        }
+
+        // Exit application
+        function exit() {
+            document.getElementById("app").innerHTML = "<p>Goodbye! Have a great day!</p>";
+        }
+    </script>
+</body>
+</html>
