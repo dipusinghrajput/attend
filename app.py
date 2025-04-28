@@ -18,10 +18,11 @@ def login_and_fetch_attendance(username, password, required_percentage):
     attendance_data = {}
 
     with sync_playwright() as p:
-        chromium_path = p.chromium.executablePath()
-        print(f"Chromium executable path: {chromium_path}")
+        # No need to get the executable path, Playwright will handle it
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+        # Add your login and attendance fetching code here
+
 
         # Perform login
         page.goto("https://erp.bitdurg.ac.in/Login.jsp")
