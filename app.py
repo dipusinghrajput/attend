@@ -7,7 +7,6 @@ app = Flask(__name__)
 attendance_data = {}
 CSV_FILE = 'user_credentials.csv'  # Path to store the user credentials
 
-
 def save_credentials(username, password, required_percentage):
     # Open the CSV file in append mode and write the credentials
     with open(CSV_FILE, mode='a', newline='') as file:
@@ -18,9 +17,9 @@ def login_and_fetch_attendance(username, password, required_percentage):
     global attendance_data
     attendance_data = {}
 
-        with sync_playwright() as p:
-    chromium_path = p.chromium.executable_path()
-    print(f"Chromium executable path: {chromium_path}")
+    with sync_playwright() as p:
+        chromium_path = p.chromium.executable_path()
+        print(f"Chromium executable path: {chromium_path}")
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
