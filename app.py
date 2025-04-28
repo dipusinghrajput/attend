@@ -18,7 +18,7 @@ def login_and_fetch_attendance(username, password, required_percentage):
     attendance_data = {}
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         # Perform login
