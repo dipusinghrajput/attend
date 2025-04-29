@@ -1,55 +1,51 @@
-# Use official Python image
+# Use an official Python image
 FROM python:3.11-slim
 
-# Install necessary system libraries
+# Install required system dependencies for Playwright Chromium
 RUN apt-get update && apt-get install -y \
     wget \
-    curl \
     gnupg \
     libglib2.0-0 \
     libnss3 \
-    libgdk-pixbuf-2.0-0 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxi6 \
-    libxtst6 \
-    libcups2 \
-    libxrandr2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libxss1 \
     libasound2 \
+    libx11-xcb1 \
+    libxcb-dri3-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxkbcommon0 \
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    fonts-liberation \
+    libappindicator3-1 \
+    libdrm2 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
-    libpangocairo-1.0-0 \
-    libcairo2 \
-    libpango-1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
     libgdk-pixbuf2.0-0 \
-    libenchant-2-2 \
-    libsoup-3.0-0 \
-    libsecret-1-0 \
-    libmanette-0.2-0 \
-    libgles2 \
-    libdrm2 \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    libnspr4 \
+    libxshmfence1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
-# Copy requirements first and install
-COPY requirements.txt .
+# Copy files
+COPY . /app
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers
-RUN python -m playwright install
+RUN python -m playwright install --with-deps
 
-# Copy all project files
-COPY . .
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-
-# Expose the port
+# Expose port
 EXPOSE 5000
 
-# Start the app
+# Run the app
 CMD ["python", "app.py"]
